@@ -4,10 +4,11 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.app.RemoteInput;
 
 import android.app.Notification;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -17,8 +18,10 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
 
-import com.iamtanshu.chatappwebsocket.MainActivity;
 import com.iamtanshu.chatappwebsocket.R;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.iamtanshu.chatappwebsocket.Notify.App.CHANNEL_1_ID;
 import static com.iamtanshu.chatappwebsocket.Notify.App.CHANNEL_2_ID;
@@ -29,6 +32,7 @@ public class NotifyActivity extends AppCompatActivity {
     private EditText editTextTitle;
     private EditText editTextMessage;
 
+    static List<Message> MESSAGES = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,34 +43,62 @@ public class NotifyActivity extends AppCompatActivity {
 
         editTextTitle = findViewById(R.id.edt_title);
         editTextMessage = findViewById(R.id.edt_message);
-
+        MESSAGES.add(new Message("Good Morming","Sheshank"));
+        MESSAGES.add(new Message("Hello","Me"));
+        MESSAGES.add(new Message("How are you?","Sheshank"));
     }
 
-    public void sendOnChannel1(View channel1) {
-        String title = editTextTitle.getText().toString();
-        String message = editTextMessage.getText().toString();
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT_WATCH)
+    public void sendOnChannel1(View v){
+sendChannel1Notification(this);
+    }
 
-        Intent activityIntent = new Intent(this, NotifyActivity.class);
-        PendingIntent contentIntent = PendingIntent.getActivity(this,
+    public static void sendChannel1Notification(Context context) {
+
+        Intent activityIntent = new Intent(context, NotifyActivity.class);
+        PendingIntent contentIntent = PendingIntent.getActivity(context,
                 0, activityIntent, 0);
 
 
-        Bitmap picture = BitmapFactory.decodeResource(getResources(), R.drawable.bigpicture);
+        RemoteInput remoteInput = new RemoteInput.Builder("key_text_reply")
+                .setLabel("Your answer...")
+                .build();
+        Intent replayIntent = new Intent(context, DirectReplyReciver.class);
+        PendingIntent replayPendingIntent = PendingIntent.getBroadcast(context,
+                0, replayIntent, 0);
+        NotificationCompat.Action replyAction = new NotificationCompat.Action.Builder(
+                R.drawable.ic_reply,
+                "Reply",
+                replayPendingIntent
+        ).addRemoteInput(remoteInput).build();
+        NotificationCompat.MessagingStyle messagingStyle =
+                new NotificationCompat.MessagingStyle(
+                        "Me"
+                );
+        messagingStyle.setConversationTitle("Group chat");
 
-        Notification notification = new NotificationCompat.Builder(this, CHANNEL_1_ID)
+        for(Message chatMessage: MESSAGES){
+            NotificationCompat.MessagingStyle.Message notificationMessage =
+                    new NotificationCompat.MessagingStyle.Message(
+                            chatMessage.getText(),
+                            chatMessage.getTimestamp(),
+                            chatMessage.getSender()
+                    );
+            messagingStyle.addMessage(notificationMessage);
+        }
+
+        Notification notification = new NotificationCompat.Builder(context, CHANNEL_1_ID)
                 .setSmallIcon(R.drawable.ic_one)
-                .setContentTitle(title)
-                .setContentText(message)
+                .setStyle(messagingStyle)
+                .addAction(replyAction)
+                .setColor(Color.BLUE)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setContentIntent(contentIntent)
                 .setAutoCancel(true)
-                .setLargeIcon(picture)
-                .setStyle(new NotificationCompat.BigPictureStyle()
-                        .bigPicture(picture)
-                        .bigLargeIcon(null))
                 .setOnlyAlertOnce(true)
                 .build();
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
         notificationManager.notify(1, notification);
 
 
