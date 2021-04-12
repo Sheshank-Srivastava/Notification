@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">ChatAppWebsocket</string>
+    <string name="long_dummy_text">Now you get the call that there is an issue with the website, and you need to fix it immediately. With Git, you don’t have to deploy your fix along with the iss53 changes you’ve made, and you don’t have to put a lot of effort into reverting those changes before you can work on applying your fix to what is in production. All you have to do is switch back to your master branch.</string>
 </resources>
