@@ -15,6 +15,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.view.View;
 import android.widget.EditText;
 
@@ -43,14 +44,14 @@ public class NotifyActivity extends AppCompatActivity {
 
         editTextTitle = findViewById(R.id.edt_title);
         editTextMessage = findViewById(R.id.edt_message);
-        MESSAGES.add(new Message("Good Morming","Sheshank"));
-        MESSAGES.add(new Message("Hello","Me"));
-        MESSAGES.add(new Message("How are you?","Sheshank"));
+        MESSAGES.add(new Message("Good Morming", "Sheshank"));
+        MESSAGES.add(new Message("Hello", "Me"));
+        MESSAGES.add(new Message("How are you?", "Sheshank"));
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT_WATCH)
-    public void sendOnChannel1(View v){
-sendChannel1Notification(this);
+    public void sendOnChannel1(View v) {
+        sendChannel1Notification(this);
     }
 
     public static void sendChannel1Notification(Context context) {
@@ -77,7 +78,7 @@ sendChannel1Notification(this);
                 );
         messagingStyle.setConversationTitle("Group chat");
 
-        for(Message chatMessage: MESSAGES){
+        for (Message chatMessage : MESSAGES) {
             NotificationCompat.MessagingStyle.Message notificationMessage =
                     new NotificationCompat.MessagingStyle.Message(
                             chatMessage.getText(),
@@ -106,22 +107,33 @@ sendChannel1Notification(this);
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public void sendOnChannel2(View channel2) {
-        String title = editTextTitle.getText().toString();
-        String message = editTextMessage.getText().toString();
-        Bitmap artWork = BitmapFactory.decodeResource(getResources(), R.drawable.index);
-        Notification notification = new NotificationCompat.Builder(this, CHANNEL_2_ID)
+        final int progressMax = 100;
+        NotificationCompat.Builder notification = new NotificationCompat.Builder(this, CHANNEL_2_ID)
                 .setSmallIcon(R.drawable.ic_two)
-                .setContentTitle(title)
-                .setContentText(message)
-                .setLargeIcon(artWork)
-                .addAction(R.drawable.ic_dislike, "Dislike", null)
-                .addAction(R.drawable.ic_previous, "Previous", null)
-                .addAction(R.drawable.ic_pause, "Pause", null)
-                .addAction(R.drawable.ic_next, "Next", null)
-                .addAction(R.drawable.ic_like, "Like", null)
+                .setContentTitle("Download")
+                .setContentText("Download in progress")
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .build();
-        notificationManager.notify(2, notification);
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setProgress(progressMax, 0, false);
+        notificationManager.notify(2, notification.build());
+
+        new Thread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        SystemClock.sleep(2000);
+                        for (int progresss = 0; progresss <= progressMax; progresss += 10) {
+                            notification.setProgress(progressMax, progresss, false);
+                            notificationManager.notify(2,
+                                    notification.build());
+                            SystemClock.sleep(1000);
+                        }
+                        notification.setContentText("Download Finished").setProgress(0, 0, false).setOngoing(false);
+                        notificationManager.notify(2, notification.build());
+                    }
+                }
+        ).start();
 
 
     }
